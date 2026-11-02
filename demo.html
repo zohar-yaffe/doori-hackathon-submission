@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vyuit — הדגמת חוויית יעד</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1A1A1A;
+    --ink-soft: #666666;
+    --teal: #18B8C9;
+    --teal-light: rgba(24,184,201,0.10);
+    --bg: #FFFFFF;
+    --surface: #F7F8FA;
+    --border: #E5E7EB;
+    --success: #22C55E;
+    --warning-bg: #FFF7ED;
+    --warning-border: #FED7AA;
+    --demo-badge-bg: #F3F4F6;
+    --demo-badge-text: #6B7280;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 520px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── DEMO BADGE ── */
+  .demo-badge {
+    background: var(--warning-bg);
+    border-bottom: 1px solid var(--warning-border);
+    text-align: center;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: #92400E;
+    flex-shrink: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .header-logo {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--teal) 0%, #7BA891 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 13px;
+    flex-shrink: 0;
+  }
+  .header-title { font-weight: 700; font-size: 16px; flex: 1; }
+  .header-room-badge {
+    font-size: 12px; color: var(--ink-soft);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2px 10px;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── ROOM SELECT ── */
+  .room-select-body {
+    flex: 1; padding: 24px 16px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .room-select-hero {
+    background: linear-gradient(135deg, rgba(26,26,26,0.04) 0%, rgba(24,184,201,0.10) 50%, rgba(123,168,145,0.10) 100%);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .room-select-hero h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .room-select-hero p { font-size: 14px; color: var(--ink-soft); }
+  .room-list { display: flex; flex-direction: column; gap: 10px; }
+  .room-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 15px; font-weight: 500;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+    text-align: right;
+  }
+  .room-btn:hover { border-color: var(--teal); background: var(--teal-light); }
+  .room-btn.featured { border-color: var(--teal); }
+  .room-btn .room-arrow { color: var(--ink-soft); font-size: 18px; }
+  .room-btn .room-tag {
+    font-size: 11px; color: var(--teal); background: rgba(24,184,201,0.12);
+    border-radius: 12px; padding: 2px 8px; font-weight: 600;
+  }
+  .room-btn-left { display: flex; align-items: center; gap: 10px; }
+
+  /* ── CHAT SCREEN ── */
+  .chat-outer { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scroll-behavior: smooth;
+  }
+
+  .msg { display: flex; flex-direction: column; max-width: 88%; }
+  .msg.doori { align-self: flex-start; }
+  .msg.user  { align-self: flex-end; }
+
+  .msg-label { font-size: 11px; color: var(--ink-soft); margin-bottom: 3px; }
+  .msg.user .msg-label { text-align: left; }
+
+  .msg-bubble {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+  .msg.doori .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-right-radius: 4px;
+  }
+  .msg.user .msg-bubble {
+    background: var(--teal);
+    color: white;
+    border-bottom-left-radius: 4px;
+  }
+
+  /* ── OPTIONS ── */
+  .options-area {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .options-label {
+    font-size: 12px; color: var(--ink-soft); margin-bottom: 2px;
+  }
+  .options-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .opt-btn {
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+    text-align: right;
+  }
+  .opt-btn:hover { border-color: var(--teal); background: var(--teal-light); }
+  .opt-btn.primary {
+    background: var(--teal); color: white; border-color: var(--teal);
+  }
+  .opt-btn.primary:hover { background: #139aaa; }
+
+  /* ── DEFECT EDITOR ── */
+  .defect-editor {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .defect-editor label {
+    font-size: 12px; color: var(--ink-soft); font-weight: 500;
+  }
+  .defect-editor textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    color: var(--ink);
+    background: var(--bg);
+    direction: rtl;
+  }
+  .defect-editor textarea:focus {
+    outline: none; border-color: var(--teal);
+  }
+  .defect-editor-actions { display: flex; gap: 8px; }
+  .btn-save {
+    flex: 1; padding: 11px; background: var(--teal); color: white;
+    border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .btn-save:hover { background: #139aaa; }
+  .btn-cancel {
+    padding: 11px 16px; background: var(--bg); color: var(--ink-soft);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    font-size: 14px; cursor: pointer;
+  }
+
+  /* ── SUMMARY SCREEN ── */
+  .summary-body {
+    flex: 1; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px;
+    overflow-y: auto;
+  }
+  .summary-title { font-size: 18px; font-weight: 700; }
+  .summary-section-label {
+    font-size: 12px; font-weight: 600; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .defect-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    background: var(--bg);
+  }
+  .defect-card-header {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft); margin-bottom: 4px;
+  }
+  .defect-card-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--teal); flex-shrink: 0;
+  }
+  .defect-card-text { font-size: 14px; line-height: 1.5; }
+  .demo-save-badge {
+    display: inline-block;
+    font-size: 11px; color: #92400E;
+    background: var(--warning-bg); border: 1px solid var(--warning-border);
+    border-radius: 12px; padding: 1px 8px; margin-top: 4px;
+  }
+  .steps-list { display: flex; flex-direction: column; gap: 6px; }
+  .step-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--ink-soft);
+    padding: 6px 0; border-bottom: 1px solid var(--surface);
+  }
+  .step-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .step-dot.done { background: var(--success); }
+  .step-dot.skipped { background: var(--border); }
+  .step-dot.open { background: var(--teal); }
+  .btn-restart {
+    width: 100%; padding: 12px; background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--ink);
+    margin-top: 8px;
+  }
+  .btn-restart:hover { border-color: var(--teal); }
+
+  /* ── STEP INDICATOR ── */
+  .step-indicator {
+    font-size: 11px; color: var(--ink-soft);
+    text-align: center; padding: 4px 0 2px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- DEMO BADGE (global) -->
+  <div class="demo-badge">המחשת חוויית היעד | שיחה ושמירה מדומות</div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-logo">V</div>
+    <span class="header-title">Vyuit</span>
+    <span id="header-room-badge" class="header-room-badge" style="display:none">חדר רחצה 1</span>
+  </header>
+
+  <!-- SCREEN: ROOM SELECT -->
+  <div id="screen-rooms" class="screen active">
+    <div class="room-select-body">
+      <div class="room-select-hero">
+        <h2>בואו נתחיל בבדיקת הדירה</h2>
+        <p>בחרו חדר כדי להתחיל את הליווי המודרך</p>
+      </div>
+      <div class="room-list">
+        <button class="room-btn featured" onclick="startRoom()">
+          <div class="room-btn-left">
+            <span>חדר רחצה 1</span>
+            <span class="room-tag">הדגמה</span>
+          </div>
+          <span class="room-arrow">‹</span>
+        </button>
+        <button class="room-btn" style="opacity:0.45; cursor:default" disabled>
+          <div class="room-btn-left"><span>מטבח</span></div>
+          <span class="room-arrow">‹</span>
+        </button>
+        <button class="room-btn" style="opacity:0.45; cursor:default" disabled>
+          <div class="room-btn-left"><span>סלון</span></div>
+          <span class="room-arrow">‹</span>
+        </button>
+        <button class="room-btn" style="opacity:0.45; cursor:default" disabled>
+          <div class="room-btn-left"><span>חדר 1</span></div>
+          <span class="room-arrow">‹</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: CHAT -->
+  <div id="screen-chat" class="screen">
+    <div class="chat-outer">
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="step-indicator" id="step-indicator"></div>
+      <!-- defect editor (hidden until triggered) -->
+      <div id="defect-editor" class="defect-editor" style="display:none">
+        <label>ניסוח מוצע — ערכו לפי הצורך</label>
+        <textarea id="defect-text" rows="3"></textarea>
+        <div class="defect-editor-actions">
+          <button class="btn-save" onclick="saveDefect()">שמור ליקוי</button>
+          <button class="btn-cancel" onclick="cancelDefect()">ביטול</button>
+        </div>
+      </div>
+      <!-- options area -->
+      <div id="options-area" class="options-area">
+        <div class="options-label" id="options-label"></div>
+        <div class="options-grid" id="options-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN: SUMMARY -->
+  <div id="screen-summary" class="screen">
+    <div class="summary-body" id="summary-body"></div>
+  </div>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────
+const state = {
+  step: 0,
+  answers: {},       // stepId → answer string
+  defects: [],       // [{id, room, text, saved}]
+  pendingDefect: null,
+  faucetInstalled: null,   // true / false / null
+  siphonSeen: null,        // true / false / null
+  skipToSummary: false,
+};
+
+// ────────────────────────────────────────────────
+// FLOW DEFINITION
+// Each node: { id, doori, options, onAnswer }
+// onAnswer(answer) → next node id (string) or null = end
+// ────────────────────────────────────────────────
+
+// helper: push a doori message and then show options
+function node(id, text, opts) {
+  return { id, text, opts };
+}
+
+const FLOW = {
+  'welcome': {
+    text: 'היי, אני דורי. אני כאן כדי ללוות אותך בבדיקת הדירה, צעד אחר צעד.\n\n(הדגמת חוויית יעד — חלק מהיכולות המוצגות טרם מומשו בסוכן הפעיל)',
+    opts: [
+      { label: 'איך לקרוא לך?', value: 'name', next: 'ask-name' },
+      { label: 'בואו נתחיל ישר', value: 'skip-name', next: 'ask-apt-type' },
+    ],
+  },
+  'ask-name': {
+    text: 'שמחה שהצטרפת! איך אפשר לפנות אליך?',
+    opts: [
+      { label: 'מיכל', value: 'מיכל', next: 'got-name' },
+      { label: 'דני', value: 'דני', next: 'got-name' },
+      { label: 'אני מעדיף/ה לא לציין', value: 'anonymous', next: 'ask-apt-type' },
+    ],
+  },
+  'got-name': {
+    text: (a) => `שמחה לפגוש אותך, ${a}!`,
+    opts: [
+      { label: 'המשך', value: '', next: 'ask-apt-type' },
+    ],
+  },
+  'ask-apt-type': {
+    text: 'האם זו דירה חדשה מקבלן או כניסה לשכירות?',
+    opts: [
+      { label: 'דירה חדשה מקבלן', value: 'קבלן', next: 'ask-rooms' },
+      { label: 'כניסה לשכירות', value: 'שכירות', next: 'ask-rooms' },
+    ],
+  },
+  'ask-rooms': {
+    text: 'כמה חדרי רחצה יש בדירה?',
+    opts: [
+      { label: '1', value: '1', next: 'room-intro' },
+      { label: '2', value: '2', next: 'room-intro' },
+      { label: '3 ומעלה', value: '3+', next: 'room-intro' },
+    ],
+  },
+  'room-intro': {
+    text: 'מצוין. נתחיל בחדר רחצה 1.\n\nלפני שנתחיל — יש מקלחון, אמבטיה, או שניהם?',
+    opts: [
+      { label: 'מקלחון בלבד', value: 'מקלחון', next: 'faucet-q' },
+      { label: 'אמבטיה בלבד', value: 'אמבטיה', next: 'faucet-q' },
+      { label: 'שניהם', value: 'שניהם', next: 'faucet-q' },
+    ],
+  },
+  'faucet-q': {
+    text: 'נתחיל בכיור. האם הברז מותקן?',
+    opts: [
+      { label: 'כן, מותקן', value: 'yes', next: 'siphon-q',
+        onPick: () => { state.faucetInstalled = true; } },
+      { label: 'לא מותקן', value: 'no', next: 'faucet-not-installed',
+        onPick: () => { state.faucetInstalled = false; } },
+      { label: 'לא בטוח/ה', value: 'unclear', next: 'faucet-unclear',
+        onPick: () => { state.faucetInstalled = false; } },
+    ],
+  },
+  'faucet-not-installed': {
+    text: 'הבנתי — הברז עדיין לא מותקן. נסמן זאת כ"לא ברור / לא קיים" ונמשיך לבדיקות האחרות.\n\nאפשר לחזור לכיור בהמשך כשהברז יותקן.',
+    opts: [
+      { label: 'המשך לאסלה', value: '', next: 'toilet-q' },
+      { label: 'דלג לסיכום', value: '', next: 'summary-transition' },
+    ],
+  },
+  'faucet-unclear': {
+    text: 'בסדר גמור. ברז מותקן הוא ברז שמחובר לצנרת ויש לו ידית. אם לא ניתן לאמת כרגע, נשאיר לבירור.\n\nאפשר להמשיך ולחזור לכיור מאוחר יותר.',
+    opts: [
+      { label: 'המשך לאסלה', value: '', next: 'toilet-q' },
+      { label: 'דלג לסיכום', value: '', next: 'summary-transition' },
+    ],
+  },
+  'siphon-q': {
+    text: 'הסתכלו מתחת לכיור, בתוך הארון אם קיים, בלי לפרק דבר. האם רואים סיפון?',
+    opts: [
+      { label: 'כן, רואה סיפון', value: 'yes', next: 'flow-cold',
+        onPick: () => { state.siphonSeen = true; } },
+      { label: 'לא רואה', value: 'no', next: 'siphon-not-seen',
+        onPick: () => { state.siphonSeen = false; } },
+      { label: 'יש צינור מנותק', value: 'pipe-off', next: 'siphon-pipe-off',
+        onPick: () => { state.siphonSeen = false; } },
+      { label: 'מה זה סיפון?', value: 'explain', next: 'siphon-explain' },
+    ],
+  },
+  'siphon-explain': {
+    text: 'הסיפון הוא הצינור המכופף שמתחת לכיור — בדרך כלל בצורת U או P. הוא מונע ריחות מהביוב ומחזיק מעט מים. מחפשים צינור כהה או לבן שיוצא מהכיור ועולה לקיר.\n\nהסתכלו שוב — האם עכשיו רואים אותו?',
+    opts: [
+      { label: 'כן, עכשיו רואה', value: 'yes', next: 'flow-cold',
+        onPick: () => { state.siphonSeen = true; } },
+      { label: 'עדיין לא רואה', value: 'no', next: 'siphon-not-seen',
+        onPick: () => { state.siphonSeen = false; } },
+    ],
+  },
+  'siphon-not-seen': {
+    text: 'אי-זיהוי אינו הוכחה לחוסר — ייתכן שהסיפון מוסתר בארון. לא ניתן לאמת שהמים יוכלו לנקז תקין, לכן לא נמשיך לפתיחת ברז.\n\nנשאיר לבירור ונמשיך לאסלה.',
+    opts: [
+      { label: 'המשך לאסלה', value: '', next: 'toilet-q' },
+      { label: 'דלג לסיכום', value: '', next: 'summary-transition' },
+    ],
+  },
+  'siphon-pipe-off': {
+    text: 'צינור מנותק מצריך בדיקה לפני פתיחת מים — יש סיכון לנזילה. לא נמשיך לפתיחת ברז.\n\nנסמן זאת כממצא לתיעוד ונמשיך.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-pipe',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — נצפה צינור מנותק מתחת לכיור. יש לבדוק ולחבר לפני פתיחת מים.' };
+        }
+      },
+      { label: 'המשך ללא תיעוד', value: '', next: 'toilet-q' },
+    ],
+  },
+  'defect-pipe': {
+    text: 'הנה ניסוח מוצע לליקוי. ערכו לפי הצורך ושמרו.',
+    opts: [],
+    isDefect: true,
+    afterDefect: 'toilet-q',
+  },
+  'flow-cold': {
+    text: 'פתחו מעט את הברז בצד הקר. האם יש זרימה?',
+    opts: [
+      { label: 'כן, יש זרימה', value: 'yes', next: 'flow-hot' },
+      { label: 'לא, אין זרימה', value: 'no', next: 'flow-cold-no' },
+      { label: 'זרימה חלשה מאוד', value: 'weak', next: 'flow-cold-weak' },
+    ],
+  },
+  'flow-cold-no': {
+    text: 'אין זרימה במים קרים. זה ממצא לתיעוד. לפני הכל, סגרו את הברז.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-no-cold',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — אין זרימת מים קרים בברז. יש לבדוק חיבור הצנרת.' };
+        }
+      },
+      { label: 'המשך ללא תיעוד', value: '', next: 'toilet-q' },
+    ],
+  },
+  'defect-no-cold': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'toilet-q',
+  },
+  'flow-cold-weak': {
+    text: 'זרימה חלשה יכולה להצביע על לחץ נמוך או סתימה. זה ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-weak-cold',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — זרימת מים קרים חלשה מהצפוי. יש לבדוק לחץ וסתימות.' };
+        }
+      },
+      { label: 'המשך ללא תיעוד', value: '', next: 'flow-hot' },
+    ],
+  },
+  'defect-weak-cold': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'flow-hot',
+  },
+  'flow-hot': {
+    text: 'העבירו בהדרגה לצד החם. האם יש זרימה גם שם? אין צורך להמתין להתחממות.',
+    opts: [
+      { label: 'כן, יש זרימה', value: 'yes', next: 'flow-quality' },
+      { label: 'לא, אין זרימה', value: 'no', next: 'flow-hot-no' },
+    ],
+  },
+  'flow-hot-no': {
+    text: 'אין זרימה במים חמים. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-no-hot',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — אין זרימת מים חמים בברז. יש לבדוק חיבור לדוד/צנרת חמה.' };
+        }
+      },
+      { label: 'המשך ללא תיעוד', value: '', next: 'flow-quality' },
+    ],
+  },
+  'defect-no-hot': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'flow-quality',
+  },
+  'flow-quality': {
+    text: 'האם הזרם רציף, או שיש חולשה, הפסקות או התזה חריגה?',
+    opts: [
+      { label: 'זרם רציף ותקין', value: 'ok', next: 'flow-color' },
+      { label: 'יש הפסקות', value: 'intermittent', next: 'flow-quality-issue' },
+      { label: 'התזה חריגה', value: 'spray', next: 'flow-quality-issue' },
+    ],
+  },
+  'flow-quality-issue': {
+    text: 'בעיית זרם יכולה להצביע על תקלה בברז או בצנרת. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-flow-q',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — זרימה לא סדירה / התזה חריגה בברז. יש לבדוק מנגנון הברז.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'flow-color' },
+    ],
+  },
+  'defect-flow-q': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'flow-color',
+  },
+  'flow-color': {
+    text: 'האם המים נראים צלולים או שיש צבע חריג?',
+    opts: [
+      { label: 'צלולים לגמרי', value: 'clear', next: 'flow-drain' },
+      { label: 'צבע צהבהב / חום', value: 'yellow', next: 'flow-color-issue' },
+      { label: 'מעט עכורים', value: 'murky', next: 'flow-color-issue' },
+    ],
+  },
+  'flow-color-issue': {
+    text: 'מים לא צלולים יכולים להצביע על חלודה, סתימה, או בעיה בצנרת. זה ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-color',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — מים עכורים / בעלי גוון חריג בברז. יש לברר מקור הצבע.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'flow-drain' },
+    ],
+  },
+  'defect-color': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'flow-drain',
+  },
+  'flow-drain': {
+    text: 'האם המים מתנקזים או מצטברים בכיור?\n\nלאחר ההתבוננות — סגרו את הברז. אם המים עומדים לגלוש, סגרו מיד.',
+    opts: [
+      { label: 'מתנקזים מהר', value: 'fast', next: 'under-sink-leak' },
+      { label: 'מתנקזים לאט', value: 'slow', next: 'flow-drain-slow' },
+      { label: 'מצטברים, לא מתנקזים', value: 'blocked', next: 'flow-drain-blocked' },
+    ],
+  },
+  'flow-drain-slow': {
+    text: 'ניקוז איטי עשוי להצביע על חסימה חלקית. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-drain-slow',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — ניקוז איטי. יש לבדוק ולנקות חסימה.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'under-sink-leak' },
+    ],
+  },
+  'defect-drain-slow': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'under-sink-leak',
+  },
+  'flow-drain-blocked': {
+    text: 'חסימה מלאה בניקוז היא ממצא משמעותי.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-drain-blocked',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — ניקוז חסום. המים אינם מתנקזים. יש לבדוק.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'under-sink-leak' },
+    ],
+  },
+  'defect-drain-blocked': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'under-sink-leak',
+  },
+  'under-sink-leak': {
+    text: 'עכשיו הסתכלו מתחת לכיור — האם יש סימני רטיבות, טפטוף או כתמים לחים על הרצפה או דפנות הארון?',
+    opts: [
+      { label: 'יבש לגמרי', value: 'dry', next: 'toilet-q' },
+      { label: 'יש רטיבות / טפטוף', value: 'wet', next: 'under-sink-wet' },
+      { label: 'כתמים ישנים, יבשים', value: 'stains', next: 'under-sink-stains' },
+    ],
+  },
+  'under-sink-wet': {
+    text: 'רטיבות פעילה מתחת לכיור מצריכה תיקון לפני כניסה. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-wet',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — רטיבות פעילה / טפטוף נצפה מתחת לכיור. יש לאתר מקור ולתקן.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'toilet-q' },
+    ],
+  },
+  'defect-wet': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'toilet-q',
+  },
+  'under-sink-stains': {
+    text: 'כתמים ישנים יכולים להצביע על נזילה עבר. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-stains',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'כיור — כתמי רטיבות ישנים מתחת לכיור. יש לבדוק אם יש נזילה קיימת.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'toilet-q' },
+    ],
+  },
+  'defect-stains': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'toilet-q',
+  },
+
+  // ── TOILET ──
+  'toilet-q': {
+    text: 'נמשיך לאסלה. האם האסלה מותקנת?',
+    opts: [
+      { label: 'כן', value: 'yes', next: 'toilet-flush' },
+      { label: 'לא / לא קיים', value: 'no', next: 'shower-q' },
+    ],
+  },
+  'toilet-flush': {
+    text: 'הדיחו את האסלה. האם ההדחה מלאה ותקינה?',
+    opts: [
+      { label: 'כן, תקין', value: 'ok', next: 'toilet-drip' },
+      { label: 'הדחה חלשה', value: 'weak', next: 'toilet-flush-issue' },
+      { label: 'לא עוצרת / ממשיכה לזרום', value: 'running', next: 'toilet-flush-issue' },
+    ],
+  },
+  'toilet-flush-issue': {
+    text: 'בעיית הדחה יכולה להצביע על מנגנון פגום. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-flush',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'אסלה — הדחה לא תקינה (חלשה / ממשיכה לזרום). יש לבדוק מנגנון המיכל.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'toilet-drip' },
+    ],
+  },
+  'defect-flush': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'toilet-drip',
+  },
+  'toilet-drip': {
+    text: 'האם יש טפטוף או דליפה מהמיכל, מחיבורי הצינורות, או מרצפת הרגלים?',
+    opts: [
+      { label: 'לא, יבש', value: 'dry', next: 'shower-q' },
+      { label: 'כן, יש דליפה', value: 'drip', next: 'toilet-drip-defect' },
+    ],
+  },
+  'toilet-drip-defect': {
+    text: 'דליפה מהאסלה היא ממצא משמעותי.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-toilet-drip',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'אסלה — נצפתה דליפה / טפטוף. יש לאתר מקור ולתקן.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'shower-q' },
+    ],
+  },
+  'defect-toilet-drip': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'shower-q',
+  },
+
+  // ── SHOWER ──
+  'shower-q': {
+    text: 'נמשיך למקלחון. האם קיים מקלחון בחדר זה?',
+    opts: [
+      { label: 'כן', value: 'yes', next: 'shower-flow' },
+      { label: 'לא', value: 'no', next: 'finishes-q' },
+    ],
+  },
+  'shower-flow': {
+    text: 'הפעילו את המקלחון בצד הקר. האם יש זרימה תקינה?',
+    opts: [
+      { label: 'כן, תקין', value: 'ok', next: 'shower-drain' },
+      { label: 'זרימה חלשה', value: 'weak', next: 'shower-flow-issue' },
+      { label: 'אין זרימה', value: 'no', next: 'shower-flow-issue' },
+    ],
+  },
+  'shower-flow-issue': {
+    text: 'בעיית זרימה במקלחון. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-shower-flow',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'מקלחון — בעיית זרימה (חלשה / אין). יש לבדוק חיבורים ולחץ.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'shower-drain' },
+    ],
+  },
+  'defect-shower-flow': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'shower-drain',
+  },
+  'shower-drain': {
+    text: 'האם מי המקלחון מתנקזים תקין? לאחר הבדיקה, סגרו.',
+    opts: [
+      { label: 'כן, מתנקזים', value: 'ok', next: 'finishes-q' },
+      { label: 'ניקוז איטי / חסום', value: 'bad', next: 'shower-drain-issue' },
+    ],
+  },
+  'shower-drain-issue': {
+    text: 'בעיית ניקוז במקלחון. ממצא לתיעוד.',
+    opts: [
+      { label: 'תעד ממצא', value: 'defect', next: 'defect-shower-drain',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'מקלחון — ניקוז איטי / חסום. יש לנקות ולבדוק שיפוע.' };
+        }
+      },
+      { label: 'המשך', value: '', next: 'finishes-q' },
+    ],
+  },
+  'defect-shower-drain': {
+    text: 'ניסוח מוצע לליקוי. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'finishes-q',
+  },
+
+  // ── FINISHES ──
+  'finishes-q': {
+    text: 'נעבור לגימורים. בדקו את הריצוף, החיפוי והטיח — האם יש סדקים, שברים, קילופים או אריחים רופפים?',
+    opts: [
+      { label: 'הכל תקין', value: 'ok', next: 'summary-transition' },
+      { label: 'כן, יש ממצא', value: 'defect', next: 'finishes-defect',
+        onPick: () => {
+          state.pendingDefect = { room: 'חדר רחצה 1', suggestion: 'גימורים — נצפה פגם בריצוף / חיפוי / טיח. פרטו מיקום וסוג הפגם.' };
+        }
+      },
+    ],
+  },
+  'finishes-defect': {
+    text: 'ניסוח מוצע לליקוי גימורים. ערכו ושמרו.',
+    opts: [], isDefect: true, afterDefect: 'summary-transition',
+  },
+
+  'summary-transition': {
+    text: 'סיימנו את חדר רחצה 1. \n\nנעבור לסיכום.',
+    opts: [
+      { label: 'עבור לסיכום', value: '', next: '__summary__' },
+    ],
+  },
+};
+
+// ────────────────────────────────────────────────
+// RENDER HELPERS
+// ────────────────────────────────────────────────
+const $msgs   = document.getElementById('chat-messages');
+const $opts   = document.getElementById('options-area');
+const $grid   = document.getElementById('options-grid');
+const $label  = document.getElementById('options-label');
+const $editor = document.getElementById('defect-editor');
+const $ta     = document.getElementById('defect-text');
+const $ind    = document.getElementById('step-indicator');
+const $badge  = document.getElementById('header-room-badge');
+
+function addMsg(who, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + who;
+  const lbl = document.createElement('div');
+  lbl.className = 'msg-label';
+  lbl.textContent = who === 'doori' ? 'דורי' : 'את/ה';
+  const bub = document.createElement('div');
+  bub.className = 'msg-bubble';
+  bub.textContent = text;
+  wrap.appendChild(lbl);
+  wrap.appendChild(bub);
+  $msgs.appendChild(wrap);
+  $msgs.scrollTop = $msgs.scrollHeight;
+}
+
+function clearOptions() {
+  $grid.innerHTML = '';
+  $label.textContent = '';
+}
+
+function showOptions(opts, label) {
+  clearOptions();
+  $editor.style.display = 'none';
+  $opts.style.display = '';
+  if (label) $label.textContent = label;
+  opts.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (opt.primary ? ' primary' : '');
+    btn.textContent = opt.label;
+    btn.onclick = () => handleOption(opt);
+    $grid.appendChild(btn);
+  });
+}
+
+// ────────────────────────────────────────────────
+// FLOW ENGINE
+// ────────────────────────────────────────────────
+let currentNodeId = null;
+let stepCount = 0;
+const TOTAL_STEPS = 8; // rough milestone count for indicator
+
+function goTo(nodeId) {
+  if (nodeId === '__summary__') { showSummary(); return; }
+  const node = FLOW[nodeId];
+  if (!node) { showSummary(); return; }
+  currentNodeId = nodeId;
+
+  const text = typeof node.text === 'function'
+    ? node.text(state.answers['ask-name'] || '')
+    : node.text;
+
+  addMsg('doori', text);
+
+  // update step indicator
+  stepCount++;
+  const pct = Math.min(100, Math.round(stepCount / TOTAL_STEPS * 100));
+  $ind.textContent = nodeId.startsWith('summary') ? '' : `שלב ${stepCount}`;
+
+  if (node.isDefect) {
+    // open defect editor
+    $opts.style.display = 'none';
+    $editor.style.display = '';
+    $ta.value = state.pendingDefect ? state.pendingDefect.suggestion : '';
+    $ta.focus();
+    return;
+  }
+
+  if (!node.opts || node.opts.length === 0) {
+    $opts.style.display = 'none';
+    return;
+  }
+
+  showOptions(node.opts, 'בחרו תשובה');
+}
+
+function handleOption(opt) {
+  if (opt.onPick) opt.onPick();
+  if (opt.value) addMsg('user', opt.label);
+  state.answers[currentNodeId] = opt.value;
+  clearOptions();
+  setTimeout(() => goTo(opt.next), 300);
+}
+
+// ── DEFECT SAVE ──
+function saveDefect() {
+  const text = $ta.value.trim();
+  if (!text) return;
+  const node = FLOW[currentNodeId];
+  const room = state.pendingDefect ? state.pendingDefect.room : 'חדר רחצה 1';
+  state.defects.push({ id: Date.now(), room, text, saved: true });
+  state.pendingDefect = null;
+  $editor.style.display = 'none';
+  addMsg('user', '✓ ' + text);
+
+  // simulated save confirmation
+  setTimeout(() => {
+    addMsg('doori', 'הדמיית שמירה לצורכי הדגמה\n\nהממצא נרשם ויופיע בסיכום.');
+    setTimeout(() => {
+      const next = node && node.afterDefect ? node.afterDefect : 'summary-transition';
+      goTo(next);
+    }, 700);
+  }, 400);
+}
+
+function cancelDefect() {
+  state.pendingDefect = null;
+  $editor.style.display = 'none';
+  const node = FLOW[currentNodeId];
+  const next = node && node.afterDefect ? node.afterDefect : 'summary-transition';
+  goTo(next);
+}
+
+// ────────────────────────────────────────────────
+// SUMMARY
+// ────────────────────────────────────────────────
+function showSummary() {
+  document.getElementById('screen-chat').classList.remove('active');
+  const $sum = document.getElementById('screen-summary');
+  $sum.classList.add('active');
+  $badge.style.display = 'none';
+
+  const body = document.getElementById('summary-body');
+  body.innerHTML = '';
+
+  const title = document.createElement('h2');
+  title.className = 'summary-title';
+  title.textContent = 'סיכום בדיקה — חדר רחצה 1';
+  body.appendChild(title);
+
+  // defects
+  const defLabel = document.createElement('div');
+  defLabel.className = 'summary-section-label';
+  defLabel.textContent = state.defects.length > 0
+    ? `ממצאים שתועדו (${state.defects.length})`
+    : 'ממצאים שתועדו';
+  body.appendChild(defLabel);
+
+  if (state.defects.length === 0) {
+    const none = document.createElement('p');
+    none.style.cssText = 'font-size:14px;color:var(--ink-soft);';
+    none.textContent = 'לא תועדו ממצאים בהדגמה זו.';
+    body.appendChild(none);
+  } else {
+    state.defects.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'defect-card';
+      card.innerHTML = `
+        <div class="defect-card-header">
+          <div class="defect-card-dot"></div>
+          <span>${d.room}</span>
+        </div>
+        <div class="defect-card-text">${escHtml(d.text)}</div>
+        <span class="demo-save-badge">הדמיה — לא שמירה אמיתית</span>
+      `;
+      body.appendChild(card);
+    });
+  }
+
+  // steps overview
+  const stepsLabel = document.createElement('div');
+  stepsLabel.className = 'summary-section-label';
+  stepsLabel.style.marginTop = '16px';
+  stepsLabel.textContent = 'שלבי הבדיקה';
+  body.appendChild(stepsLabel);
+
+  const overview = [
+    { label: 'ברז כיור', done: state.faucetInstalled !== null },
+    { label: 'סיפון', done: state.siphonSeen !== null },
+    { label: 'זרימת מים', done: !!state.answers['flow-cold'] },
+    { label: 'ניקוז כיור', done: !!state.answers['flow-drain'] },
+    { label: 'מתחת לכיור', done: !!state.answers['under-sink-leak'] },
+    { label: 'אסלה', done: !!state.answers['toilet-q'] },
+    { label: 'מקלחון', done: !!state.answers['shower-q'] },
+    { label: 'גימורים', done: !!state.answers['finishes-q'] },
+  ];
+
+  const list = document.createElement('div');
+  list.className = 'steps-list';
+  overview.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'step-row';
+    row.innerHTML = `<div class="step-dot ${s.done ? 'done' : 'skipped'}"></div><span>${s.label}</span>`;
+    list.appendChild(row);
+  });
+  body.appendChild(list);
+
+  // disclaimer
+  const disc = document.createElement('p');
+  disc.style.cssText = 'font-size:12px;color:var(--ink-soft);margin-top:12px;line-height:1.5;';
+  disc.textContent = 'הממצאים נרשמו בזיכרון הדף בלבד ואינם שמורים. שמירה לאפליקציה ועקביות בין הפעלות טרם מומשו.';
+  body.appendChild(disc);
+
+  // restart
+  const restartBtn = document.createElement('button');
+  restartBtn.className = 'btn-restart';
+  restartBtn.textContent = 'התחל הדגמה מחדש';
+  restartBtn.onclick = restart;
+  body.appendChild(restartBtn);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ────────────────────────────────────────────────
+// START / RESTART
+// ────────────────────────────────────────────────
+function startRoom() {
+  document.getElementById('screen-rooms').classList.remove('active');
+  document.getElementById('screen-chat').classList.add('active');
+  $badge.style.display = '';
+  goTo('welcome');
+}
+
+function restart() {
+  // reset state
+  state.step = 0;
+  state.answers = {};
+  state.defects = [];
+  state.pendingDefect = null;
+  state.faucetInstalled = null;
+  state.siphonSeen = null;
+  stepCount = 0;
+
+  // clear UI
+  $msgs.innerHTML = '';
+  clearOptions();
+  $editor.style.display = 'none';
+  $ind.textContent = '';
+
+  document.getElementById('screen-summary').classList.remove('active');
+  document.getElementById('screen-chat').classList.remove('active');
+  document.getElementById('screen-rooms').classList.add('active');
+  $badge.style.display = 'none';
+}
+</script>
+</body>
+</html>
